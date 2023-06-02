@@ -167,14 +167,12 @@ class GBN_model(nn.Module):
 
         for t in range(self.layer_num):
             if t == 0:
-                phi[t] = torch.softmax(torch.mm(self.topic_embedding[t](),
-                                             torch.transpose(self.topic_embedding[t + 1](), 0, 1)), dim=0)
+                phi[t] = torch.softmax(torch.mm(self.topic_embedding[t](), torch.transpose(self.topic_embedding[t + 1](), 0, 1)), dim=0)
                 #phi_alpha[t] = phi[t]
                 self.rho[t] = self.topic_embedding[0]()
                 phi_alpha[t] = torch.softmax(torch.mm(self.rho[0], torch.transpose(self.topic_embedding[t + 1](), 0, 1)), dim=0)  # phi[t]    #torch.mm(self.topic_embedding[0](), torch.transpose(self.topic_embedding[t + 1](), 0, 1))
             else:
-                phi[t] = torch.softmax(torch.mm(self.topic_embedding[t]().detach(),
-                                             torch.transpose(self.topic_embedding[t + 1](), 0, 1)), dim=0)
+                phi[t] = torch.softmax(torch.mm(self.topic_embedding[t]().detach(), torch.transpose(self.topic_embedding[t + 1](), 0, 1)), dim=0)
                 #phi_alpha[t] = torch.mm(phi_alpha[t-1].detach(), phi[t])
                 self.rho[t] = self.rho_graph_encoder[t - 1](self.rho[t - 1].detach(), self.edge_index[t - 1])
 
