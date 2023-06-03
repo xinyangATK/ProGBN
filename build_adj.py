@@ -38,7 +38,7 @@ def build_adj_matrix(dataset_dir, adj_save_dir, word_emb):
     with open(dataset_dir, 'rb') as f:
         data = pickle.load(f)
 
-    voc = data['voc']
+    voc = data['voc20000']
     voc_id = []
     ignore_id = []
     for i in range(len(voc)):
@@ -78,9 +78,9 @@ def build_adj_matrix(dataset_dir, adj_save_dir, word_emb):
     f.close()
 
 if __name__ == '__main__':
-    cache_dir = 'data/vector/glove/'
-    dataset_dir = 'data/20ng/20ng.pkl'
-    adj_save_dir = 'data/20ng/20ng_adj.pkl'
+    cache_dir = './data/vector/glove/'
+    dataset_dir = './data/20ng/20ng.pkl'
+    adj_save_dir = './data/20ng/20ng_adj.pkl'
     print('===> Load word embedding from glove')
     word_emb = get_word_embedding_from_glove(cache_dir=cache_dir)
     print('===> Build adj matrix from data')
