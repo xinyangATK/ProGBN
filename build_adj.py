@@ -24,81 +24,68 @@ def cosine_simlarity(A, B):
     cos_AB[(np.arange(N), np.arange(N))] = 1
     return cos_AB
 
-cache_dir = './.vector_cache/glove/'
-glove = vocab.GloVe(name='6B', dim=300, cache=cache_dir)
-print(glove.vectors.size())
+def get_word_embedding_from_glove(cache_dir):
+    glove = vocab.GloVe(name='6B', dim=300, cache=cache_dir)
 
-# data_file = './dataset/20ng.pkl'
-# data_file = './dataset/rcv1v2_bow_8000.pkl'
-# data_file = './dataset/wiki_bow_10000.pkl'
+    return glove
 
-data_file = './dataset/r8.pkl'
-# data_file = './data/20NG/20ng.pkl'
-# data_file = './data/TMN/tag_my_news.pkl'
-with open(data_file, 'rb') as f:
-    data = pickle.load(f)
 
-# voc = data['voc2000']
-voc = data['voc']
-# voc = data[1]
-# voc = data[1]
-print(len(voc))
+def build_adj_matrix(dataset_dir, adj_save_dir, word_emb):
+    m = [2, 4, 6, 8]
+    adj = {}
+    threshold = [0.6, 0.5, 0.35, 0.2]
 
-voc_id = []
-ignore_id = []
-for i in range(len(voc)):
-    if voc[i] not in glove.stoi:
-        voc_id.append(glove.stoi['.'])
-        print(voc[i])
-        ignore_id.append(i)
-        continue
-    voc_id.append(glove.stoi[voc[i]])
+    with open(dataset_dir, 'rb') as f:
+        data = pickle.load(f)
 
-voc_vector = glove.vectors[voc_id].numpy()
-print('voc vector shape: ', voc_vector.shape)
-voc_vector[ignore_id] = np.zeros([len(ignore_id), 300])
-voc_adj = cosine_simlarity(voc_vector, voc_vector)
-# m = [1, 2, 3, 4]
-m = [4, 8, 16, 32]
-# m = [4, 8, 16, 32]
-adj = {}
-threshold = [0.6, 0.5, 0.35, 0.2]
-for layer in range(len(m)):
-    adj_t = np.zeros_like(voc_adj)
-    print('layer = ', layer)
-    c = 0
+    voc = data['voc']
+    voc_id = []
+    ignore_id = []
     for i in range(len(voc)):
-        if i in ignore_id:
-            adj_t[i][i] = 1
+        if voc[i] not in word_emb.stoi:
+            voc_id.append(word_emb.stoi['.'])
+            print(voc[i])
+            ignore_id.append(i)
             continue
-        v = np.sort(voc_adj[i])[::-1][m[layer]]
-        if v < threshold[layer]:
-            v = threshold[layer]
-        for j in range(len(voc)):
-            if voc_adj[i][j] >= v:
-                c += 1
-                adj_t[i][j] = 1
-            else:
-                adj_t[i][j] = 0
-    print('c = ', c)
-    print(adj_t.sum())
-    # adj_t = adj_t / np.sum(adj_t, axis=1)
+        voc_id.append(word_emb.stoi[voc[i]])
 
-    adj['layer_' + str(layer + 1)] = sp.csr_matrix(adj_t)
-    print('build layer ', layer + 1)
+    voc_vector = word_emb.vectors[voc_id].numpy()
+    voc_vector[ignore_id] = np.zeros([len(ignore_id), 300])
+    voc_adj = cosine_simlarity(voc_vector, voc_vector)
 
+    for layer in range(len(m)):
+        adj_t = np.zeros_like(voc_adj)
+        c = 0
+        for i in range(len(voc)):
+            if i in ignore_id:
+                adj_t[i][i] = 1
+                continue
+            v = np.sort(voc_adj[i])[::-1][m[layer]]
+            if v < threshold[layer]:
+                v = threshold[layer]
+            for j in range(len(voc)):
+                if voc_adj[i][j] >= v:
+                    c += 1
+                    adj_t[i][j] = 1
+                else:
+                    adj_t[i][j] = 0
 
-# f = open('../Sawtooth_1/data/r8_spadj_2468_7.pkl', 'wb')
-# f = open('../Sawtooth_1/data/20ng2w_spadj_2468_7_1.pkl', 'wb')
-# f = open('../Sawtooth_1/data/tmn_spadj_2468_7.pkl', 'wb')
-# f = open('./dataset/rcv1_spadj_2468.pkl', 'wb')
-# f = open('./dataset/wiki_adj_2468.pkl', 'wb')
-f = open('dataset/r8_spadj_final.pkl', 'wb')
-pickle.dump(adj, f)
-f.close()
+        adj['layer_' + str(layer + 1)] = sp.csr_matrix(adj_t)
+        print('====> Layer {} has been built.'.format(layer + 1))
 
-print('build over!')
+    f = open(adj_save_dir, 'wb')
+    pickle.dump(adj, f)
+    f.close()
 
+if __name__ == '__main__':
+    cache_dir = 'data/vector/glove/'
+    dataset_dir = 'data/20ng/20ng.pkl'
+    adj_save_dir = 'data/20ng/20ng_adj.pkl'
+    print('===> Load word embedding from glove')
+    word_emb = get_word_embedding_from_glove(cache_dir=cache_dir)
+    print('===> Build adj matrix from data')
+    build_adj_matrix(dataset_dir=dataset_dir, adj_save_dir=adj_save_dir, word_emb=word_emb)
+    print('===> Build over!!!')
 
 
 

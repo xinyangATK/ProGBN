@@ -3,8 +3,8 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch
 from progbn import *
-from utils.eval_util import *
-import matplotlib.pyplot as plt
+from utils.evaluation import *
+from utils.save import *
 
 class GBN_trainer:
     def __init__(self, args, voc_path='voc.txt'):
@@ -22,7 +22,7 @@ class GBN_trainer:
             os.makedirs(self.save_path)
 
     def log_max(self, x):
-        return torch.log(torch.max(x, self.model.real_min.cuda()))
+        return torch.log(torch.max(x, self.model.real_min.to(x.device)))
 
     def compute_loss(self, x, re_x):
         likelihood = torch.sum(x * self.log_max(re_x) - re_x - torch.lgamma(x + 1.))
@@ -129,7 +129,7 @@ class GBN_trainer:
             if ppl < best_ppl:
                 best_ppl = ppl
                 best_epoch = epoch + 1
-            print('Epoch {}|{}, test_ikelihood: {:.6f}}'.format(epoch + 1, self.epochs, ppl))
+            print('Epoch {}|{}, test_ikelihood: {:.6f}'.format(epoch + 1, self.epochs, ppl))
             print('Best ppl: {:.6f} at epoch {}.'.format(best_ppl, best_epoch))
         else:  # task == 'clustering'
             best_purity = 0.

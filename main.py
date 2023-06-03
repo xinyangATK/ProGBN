@@ -1,11 +1,11 @@
-from mydataset import *
-from model import *
-from utils.data_util import get_data_loader
+import numpy as np
+from utils.dataset import *
+from progbn import *
 from trainer import GBN_trainer
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--task', type=str, default='clustering', help='task')
+parser.add_argument('--task', type=str, default='ppl', help='task clustering')
 parser.add_argument('--batch-size', type=int, default=200, help="models used.")
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
@@ -19,12 +19,12 @@ parser.add_argument('--embed_size', type=int, default=100, help='Number of units
 parser.add_argument('--lr', type=float, default=1e-2, help='Initial learning rate.')
 parser.add_argument('--weight_decay', type=float, default=1e-5, help='Initial learning rate.')
 parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
-parser.add_argument('--dataset', type=str, default='20ng', help='name of dataset')
-parser.add_argument('--dataset-dir', type=str, default='./dataset/20ng.pkl', help='type of dataset.')
-parser.add_argument('--adj_path', type=str, default='./dataset/20ng_spadj.pkl', help='path of adj')
-parser.add_argument('--save-path', type=str, default='saves/20ng_vis', help='type of dataset.')
+parser.add_argument('--data', type=str, default='20ng', help='name of data')
+parser.add_argument('--data-dir', type=str, default='./data/20ng/20ng.pkl', help='type of data.')
+parser.add_argument('--adj_path', type=str, default='./data/20ng/20ng_adj.pkl', help='path of adj')
+parser.add_argument('--save-path', type=str, default='saves/20ng', help='type of data.')
 parser.add_argument('--save_freq', type=int, default=5, help='freq')
-parser.add_argument('--pc', type=bool, default=True, help='type of dataset.')
+parser.add_argument('--pc', type=bool, default=True, help='type of data.')
 
 
 args = parser.parse_args()
@@ -38,15 +38,17 @@ if args.cuda:
 
 print("Load Dataset: {}".format(args.dataset))
 if args.task == 'ppl':
+    #### args.data in ['20ng', 'rcv1', 'r8']
     if args.dataset == '20ng':
-        train_loader, vocab_size, voc, adj = get_train_loader_txt_ppl(args.dataset_dir, adj_file='dataset/20ng_spadj.pkl', batch_size=args.batch_size)
+        train_loader, vocab_size, voc, adj = get_loader_ppl_20ng(args.dataset_dir, adj_file=args.adj_path, batch_size=args.batch_size)
     elif args.dataset == 'rcv1':
-        train_loader, vocab_size, voc, adj = get_train_loader_txt_ppl_rcv1(args.dataset_dir, adj_file='./dataset/rcv1_spadj.pkl', batch_size=args.batch_size)
+        train_loader, vocab_size, voc, adj = get_loader_ppl_rcv1(args.dataset_dir, adj_file=args.adj_path, batch_size=args.batch_size)
     else:
-        train_loader, vocab_size, voc, adj = get_train_loader_txt_ppl_r8(args.dataset_dir, adj_file='./dataset/r8_spadj.pkl', batch_size=args.batch_size)
+        train_loader, vocab_size, voc, adj = get_loader_ppl_r8(args.dataset_dir, adj_file=args.adj_path, batch_size=args.batch_size)
 else:
-    train_loader, voc, adj = get_data_loader('20ng', args.dataset_dir, args.adj_path,  'train', args.batch_size)
-    test_loader = get_data_loader('20ng', args.dataset_dir, args.adj_path, 'test', args.batch_size, shuffle=False, drop_last=False)
+    #### args.data in ['20ng', 'r8', 'tmn']
+    train_loader, voc, adj = get_loader_clustering(args.dataset, args.dataset_dir, args.adj_path,  'train', args.batch_size)
+    test_loader = get_loader_clustering(args.dataset, args.dataset_dir, args.adj_path, 'test', args.batch_size, shuffle=False, drop_last=False)
 
 args.vocab_size = len(voc)
 args.adj = adj
